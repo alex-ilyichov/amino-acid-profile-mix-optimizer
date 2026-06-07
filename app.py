@@ -160,7 +160,8 @@ with st.sidebar:
             "- **Neck**: around the larynx (Adam's apple), tape horizontal\n"
             "- **Hips** (women only): widest point"
         )
-        navy_height = st.number_input("Height (cm)", min_value=100, max_value=230, value=int(height_cm), step=1, key="navy_h")
+        st.caption(f"Using height from above: **{height_cm:.0f} cm**")
+        navy_height = height_cm
         navy_waist  = st.number_input("Waist at navel (cm)", min_value=50, max_value=200, value=85, step=1, key="navy_w")
         navy_neck   = st.number_input("Neck (cm)", min_value=20, max_value=60, value=38, step=1, key="navy_n")
         if sex == "Female":
