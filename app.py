@@ -98,9 +98,52 @@ with st.sidebar:
     )
     target_id = TARGET_OPTIONS[target_name]
 
+    st.divider()
+    st.subheader("Protein goal")
+
+    body_weight = st.number_input(
+        "Body weight (kg)", min_value=30, max_value=250, value=75, step=1,
+    )
+    sex = st.radio("Sex", ["Male", "Female"], horizontal=True)
+    body_fat_pct = st.number_input(
+        "Body fat % (optional — leave 0 to estimate)",
+        min_value=0, max_value=60, value=0, step=1,
+    )
+
+    LIFESTYLE_FACTORS = {
+        "Sedentary (desk job, little exercise)":   (0.8,  0.8),
+        "Lightly active (exercise 1–3×/week)":     (1.0,  1.2),
+        "Active adult (exercise 4–5×/week)":       (1.2,  1.4),
+        "Endurance sport":                         (1.4,  1.7),
+        "Strength training":                       (1.6,  2.0),
+        "Older adult (65+)":                       (1.0,  1.2),
+        "Pregnant / lactating":                    (1.1,  1.3),
+    }
+    lifestyle = st.selectbox("Lifestyle / activity", list(LIFESTYLE_FACTORS.keys()), index=2)
+    lo, hi = LIFESTYLE_FACTORS[lifestyle]
+
+    # Estimate body fat if not provided
+    if body_fat_pct > 0:
+        fat_frac = body_fat_pct / 100
+    else:
+        # BMI-based fallback estimate
+        # We don't have height so use sex-based average body fat
+        fat_frac = 0.20 if sex == "Male" else 0.28
+
+    lean_mass = body_weight * (1 - fat_frac)
+    rec_lo = round(lean_mass * lo)
+    rec_hi = round(lean_mass * hi)
+    rec_mid = round((rec_lo + rec_hi) / 2)
+
+    st.caption(
+        f"Lean mass: **{lean_mass:.0f} kg** → "
+        f"recommended **{rec_lo}–{rec_hi} g protein/day**"
+    )
+
     protein_g = st.slider(
         "Daily protein goal (g)",
-        min_value=20, max_value=200, value=50, step=5,
+        min_value=20, max_value=250, value=rec_mid, step=5,
+        help="Auto-set from your lean mass and lifestyle. Drag to override.",
     )
 
     st.divider()
