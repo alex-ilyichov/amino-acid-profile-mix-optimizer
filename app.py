@@ -22,6 +22,29 @@ from amino_optimizer.solver import optimize
 from amino_optimizer.suggest import suggest_additions
 from amino_optimizer.usda_bulk import import_dataset, db_stats, search_local, bulk_to_food_row
 
+# ── Amino acid roles (for UI tooltips and table) ─────────────────────────────
+
+AA_ROLES = {
+    "trp": "Mood & sleep (serotonin precursor)",
+    "thr": "Connective tissue & immunity",
+    "ile": "Muscle repair & blood sugar regulation",
+    "leu": "Primary muscle-building trigger (mTOR)",
+    "lys": "Collagen, calcium absorption, immunity",
+    "met": "Detoxification & sulfur metabolism",
+    "cys": "Antioxidant glutathione, skin & hair",
+    "phe": "Neurotransmitters & pain signalling",
+    "tyr": "Dopamine, adrenaline & thyroid hormones",
+    "val": "Muscle energy & coordination",
+    "his": "Immune response & stomach acid production",
+    "arg": "Nitric oxide, blood flow (conditionally essential)",
+    "ala": "Energy metabolism, glucose regulation",
+    "asp": "Neurotransmitter, urea cycle",
+    "glu": "Most abundant AA in body; neurotransmitter",
+    "gly": "Collagen synthesis, antioxidant",
+    "pro": "Collagen & connective tissue structure",
+    "ser": "Cell signalling, DNA synthesis",
+}
+
 # ── Page config ───────────────────────────────────────────────────────────────
 
 st.set_page_config(
@@ -334,7 +357,23 @@ with left:
         )
 
 with right:
-    st.subheader("Essential AA coverage")
+    st.subheader("Essential amino acid coverage")
+    st.caption(
+        "**Essential amino acids** cannot be made by the body — you must get them from food. "
+        "A deficiency in even one causes the body to break down its own muscle and tissue. "
+        "The 11 essential AAs and what they do: "
+        "**Tryptophan** (mood, sleep — serotonin precursor) · "
+        "**Threonine** (connective tissue, immunity) · "
+        "**Isoleucine** (muscle repair, blood sugar) · "
+        "**Leucine** (the primary muscle-building trigger) · "
+        "**Lysine** (collagen, calcium absorption, immunity) · "
+        "**Methionine** (detox, sulfur metabolism) · "
+        "**Cysteine** (antioxidant glutathione, skin/hair) · "
+        "**Phenylalanine** (neurotransmitters, pain signalling) · "
+        "**Tyrosine** (dopamine, adrenaline, thyroid hormones) · "
+        "**Valine** (muscle energy, coordination) · "
+        "**Histidine** (immune response, stomach acid production)."
+    )
     chart_rows = []
     for aa in ESSENTIAL_COLS:
         j   = AA_COLS.index(aa)
@@ -381,8 +420,9 @@ with st.expander("Full amino acid profile (all 17 AAs incl. non-essential)", exp
         b   = float(result.blend_norm[j])
         cov = float(result.coverage[j]) * 100
         full_rows.append({
-            "AA":                AA_LABELS[aa],
+            "Amino acid":        AA_LABELS[aa],
             "Type":              "essential" if aa in ESSENTIAL_COLS else "non-essential",
+            "Role":              AA_ROLES.get(aa, ""),
             "Blend (g/g prot)":  round(b, 4),
             "Target (g/g prot)": round(t, 4) if t > 0 else None,
             "Coverage":          f"{cov:.0f}%" if t > 0 else "n/a",
