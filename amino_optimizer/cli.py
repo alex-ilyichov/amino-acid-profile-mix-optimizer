@@ -26,8 +26,8 @@ def main():
     Find the optimal blend of foods that best matches a target amino acid
     profile (WHO adult, whole egg, beef, custom, etc.).
 
-    Set USDA_API_KEY env var or use --api-key for live USDA database search.
-    Free key at: https://fdc.nal.usda.gov/api-key-signup.html
+    Run [bold]amino-opt db import[/] once to download the full USDA database
+    locally (~30MB, no API key needed). After that, all search is offline.
     """
 
 
@@ -194,68 +194,117 @@ def suggest_cmd(foods, target, top, extra_foods):
     _print_suggestions(result, foods_df, food_ids, top_n=top)
 
 
-# ── USDA search ──────────────────────────────────────────────────────────────
+# ── USDA local DB management ──────────────────────────────────────────────────
 
-@main.command(name="search")
-@click.argument("query")
-@click.option("--api-key", envvar="USDA_API_KEY",
-              help="USDA FoodData Central API key. Free at https://fdc.nal.usda.gov/api-key-signup.html")
-@click.option("--max", "max_results", default=8, show_default=True, type=int)
-@click.option("--data-type", default="Foundation,SR Legacy", show_default=True,
-              help="FDC data type filter. Options: Foundation, SR Legacy, Survey (FNDDS), Branded.")
-def search_cmd(query, api_key, max_results, data_type):
-    """Search USDA FoodData Central for a food by name.
+@main.group(name="db")
+def db_group():
+    """Manage the local USDA bulk food database (no API key needed)."""
 
-    Results are cached locally (~/.amino_optimizer/usda_cache.db).
-    Use the returned fdc_id with `fetch` to add the food to your blend.
 
-    Requires a free USDA API key (set USDA_API_KEY env var or use --api-key).
+@db_group.command(name="import")
+@click.option("--dataset", "-d",
+              type=click.Choice(["sr_legacy", "foundation", "all"]), default="sr_legacy",
+              show_default=True,
+              help="Which USDA dataset to import. sr_legacy=7793 stable foods; "
+                   "foundation=~2000 high-quality foods; all=both.")
+@click.option("--force", is_flag=True, default=False,
+              help="Re-download and reimport even if already present.")
+def db_import(dataset, force):
+    """Download and import USDA FoodData Central data locally.
+
+    No API key required — downloads directly from fdc.nal.usda.gov.
+    Data is stored in ~/.amino_optimizer/usda_bulk.db (~30-60MB).
+    Run once; search is fully offline afterwards.
 
     Examples:
 
     \b
-        amino-opt search "spirulina"
+        amino-opt db import                  # SR Legacy, 7793 foods
+        amino-opt db import --dataset all    # SR Legacy + Foundation Foods
+    """
+    from .usda_bulk import import_dataset, DATASETS
+    datasets = list(DATASETS.keys()) if dataset == "all" else [dataset]
+    for ds in datasets:
+        try:
+            import_dataset(ds, force=force)
+        except RuntimeError as e:
+            console.print(f"[red]{e}[/]")
+            raise SystemExit(1)
+
+
+@db_group.command(name="stats")
+def db_stats_cmd():
+    """Show local bulk database statistics."""
+    from .usda_bulk import db_stats, DB_PATH
+    stats = db_stats()
+    console.print(f"\nLocal USDA bulk DB: [bold]{DB_PATH}[/]")
+    console.print(f"Total foods: [bold]{stats['total']}[/]")
+    for ds, count in stats["by_dataset"].items():
+        console.print(f"  {ds}: {count}")
+    if stats["total"] == 0:
+        console.print("\n[yellow]DB is empty. Run [bold]amino-opt db import[/] to populate.[/]")
+
+
+# ── USDA search ──────────────────────────────────────────────────────────────
+
+@main.command(name="search")
+@click.argument("query")
+@click.option("--max", "max_results", default=12, show_default=True, type=int)
+@click.option("--category", "-c", default=None,
+              help="Filter by USDA category (e.g. 'legume', 'beef', 'fish').")
+@click.option("--min-protein", default=1.0, show_default=True, type=float,
+              help="Minimum protein g/100g to include.")
+def search_cmd(query, max_results, category, min_protein):
+    """Search the local USDA bulk database for a food by name.
+
+    Run [bold]amino-opt db import[/] first to populate the local database.
+    No API key or internet connection needed after that.
+
+    Examples:
+
+    \b
+        amino-opt search spirulina
         amino-opt search "cricket flour"
         amino-opt search "nutritional yeast"
-        amino-opt search "tempeh"
+        amino-opt search tempeh
+        amino-opt search mushroom --category fungi
     """
-    if not api_key:
-        console.print("[red]USDA API key required.[/] Get one free at https://fdc.nal.usda.gov/api-key-signup.html")
-        console.print("Then set it:  export USDA_API_KEY=your_key_here")
-        raise SystemExit(1)
-
-    from .usda import search_usda, usda_to_food_row
+    from .usda_bulk import search_local, db_stats, bulk_to_food_row
     from rich.table import Table
     from rich import box
 
-    console.print(f"Searching USDA FoodData Central for [bold]{query!r}[/]...")
-    try:
-        results = search_usda(query, api_key, max_results=max_results, data_type=data_type)
-    except RuntimeError as e:
-        console.print(f"[red]{e}[/]")
+    stats = db_stats()
+    if stats["total"] == 0:
+        console.print("[yellow]Local USDA database is empty.[/]")
+        console.print("Run [bold]amino-opt db import[/] to download it (no API key needed, ~30MB).")
         raise SystemExit(1)
 
+    results = search_local(query, max_results=max_results,
+                           category_filter=category, min_protein=min_protein)
+
     if not results:
-        console.print("No results found. Try a broader search term or different --data-type.")
+        console.print(f"No results for [bold]{query!r}[/]. Try a broader term.")
         return
 
-    t = Table(title=f"USDA search: {query!r}", box=box.SIMPLE_HEAVY, show_edge=False)
+    t = Table(title=f"USDA search: {query!r} ({stats['total']} foods in local DB)",
+              box=box.SIMPLE_HEAVY, show_edge=False)
     t.add_column("FDC ID", style="cyan")
     t.add_column("Name")
+    t.add_column("Category")
     t.add_column("Protein/100g", justify="right")
-    t.add_column("Use in blend as", style="dim")
+    t.add_column("Use as", style="dim")
 
     for r in results:
-        frow = usda_to_food_row(r)
         t.add_row(
             str(r["fdc_id"]),
             r["name"],
+            r.get("category_name") or "",
             f"{r['protein']:.1f}g",
             f"usda_{r['fdc_id']}",
         )
 
     console.print(t)
-    console.print("\nTo use in a blend:  [bold]amino-opt optimize usda_<fdcId> ...[/]")
+    console.print("\nTo use in a blend:   [bold]amino-opt optimize usda_<fdcId> ...[/]")
     console.print("To see full profile: [bold]amino-opt info usda_<fdcId>[/]")
 
 
@@ -342,7 +391,15 @@ def _resolve_foods(food_ids: list[str], foods_df: pd.DataFrame) -> list[pd.Serie
         if row.empty:
             row = all_foods[all_foods["id"].str.contains(fid, case=False, regex=False)]
         if row.empty:
-            console.print(f"[red]Food not found:[/] '{fid}'. Run [bold]amino-opt foods[/] or [bold]amino-opt search[/].")
+            # Try bulk DB for usda_XXXXXX ids
+            bulk_row = _resolve_bulk_food(fid)
+            if bulk_row is not None:
+                selected.append(bulk_row)
+                continue
+            console.print(
+                f"[red]Food not found:[/] '{fid}'. "
+                f"Run [bold]amino-opt foods[/] or [bold]amino-opt search <term>[/]."
+            )
             raise SystemExit(1)
         selected.append(row.iloc[0])
     return selected
@@ -363,36 +420,59 @@ def _find_food(food_id: str, foods_df: pd.DataFrame) -> pd.Series:
     if row.empty:
         row = foods_df[foods_df["id"].str.contains(food_id, case=False, regex=False)]
     if row.empty:
+        bulk_row = _resolve_bulk_food(food_id)
+        if bulk_row is not None:
+            return bulk_row
         console.print(f"[red]Food not found:[/] '{food_id}'")
         raise SystemExit(1)
     return row.iloc[0]
 
 
 def _merge_cache(foods_df: pd.DataFrame) -> pd.DataFrame:
-    """Merge bundled foods with locally cached USDA foods."""
+    """Merge bundled foods with locally cached USDA foods (API cache + bulk DB)."""
+    extra_frames = []
+
+    # API cache (small, per-food fetches)
     try:
-        from .usda import list_cache, _get_cache, usda_to_food_row
-        import sqlite3
+        from .usda import _get_cache
         conn = _get_cache()
         rows = conn.execute(
             "SELECT fdc_id,name,category,protein,trp,thr,ile,leu,lys,met,cys,phe,tyr,val,his FROM foods"
         ).fetchall()
         conn.close()
-        if not rows:
-            return foods_df
-        cache_rows = []
-        for r in rows:
-            cache_rows.append({
-                "id": f"usda_{r[0]}",
-                "name": r[1],
-                "category": r[2],
+        if rows:
+            extra_frames.append(pd.DataFrame([{
+                "id": f"usda_{r[0]}", "name": r[1], "category": r[2],
                 "protein_per_100g": r[3],
                 **{aa: r[4 + i] for i, aa in enumerate(AA_COLS)},
-            })
-        cache_df = pd.DataFrame(cache_rows)
-        return pd.concat([foods_df, cache_df], ignore_index=True).drop_duplicates(subset="id")
+            } for r in rows]))
     except Exception:
-        return foods_df
+        pass
+
+    # Bulk DB (full USDA dataset) — only used when an id like usda_XXXXXX is requested
+    # We do NOT load all 7000+ foods into memory; they are resolved on demand in _resolve_foods
+    return (
+        pd.concat([foods_df] + extra_frames, ignore_index=True).drop_duplicates(subset="id")
+        if extra_frames else foods_df
+    )
+
+
+def _resolve_bulk_food(fid: str) -> pd.Series | None:
+    """Look up a usda_XXXXXX id directly in the bulk DB without loading all foods."""
+    if not fid.startswith("usda_"):
+        return None
+    try:
+        fdc_id = int(fid[5:])
+    except ValueError:
+        return None
+    try:
+        from .usda_bulk import get_local_by_id, bulk_to_food_row
+        r = get_local_by_id(fdc_id)
+        if r is None:
+            return None
+        return pd.Series(bulk_to_food_row(r))
+    except Exception:
+        return None
 
 
 def _print_suggestions(result, foods_df, already_selected, top_n=5):
