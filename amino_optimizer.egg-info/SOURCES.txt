@@ -4,6 +4,8 @@ amino_optimizer/cli.py
 amino_optimizer/data.py
 amino_optimizer/display.py
 amino_optimizer/solver.py
+amino_optimizer/suggest.py
+amino_optimizer/usda.py
 amino_optimizer.egg-info/PKG-INFO
 amino_optimizer.egg-info/SOURCES.txt
 amino_optimizer.egg-info/dependency_links.txt

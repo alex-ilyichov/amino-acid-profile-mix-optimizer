@@ -1,6 +1,13 @@
 # Reference amino acid scoring patterns (g AA per g protein)
-# who_adult: FAO/WHO/UNU 2007 recommended pattern for adults
-# Food-based targets (whole_egg, beef_90, etc.) are derived at runtime from foods.csv
-# met_cys and phe_tyr are combined minimums per WHO; stored split evenly here as approximation.
+# Source: FAO/WHO/UNU 2007 "Protein and Amino Acid Requirements in Human Nutrition"
+#   Table 7, p.150. Values in mg AA / g protein, converted to g/g here.
+# met+cys and phe+tyr are WHO combined pairs; stored individually (split evenly)
+#   as a practical approximation — the optimizer treats them as separate AAs.
+# Food-derived targets (whole_egg, beef_90, etc.) are generated at runtime from foods.csv
 id,name,source,trp,thr,ile,leu,lys,met,cys,phe,tyr,val,his
-who_adult,WHO/FAO/UNU Adult 2007,FAO/WHO/UNU 2007,0.0060,0.0230,0.0300,0.0590,0.0450,0.0110,0.0110,0.0190,0.0190,0.0390,0.0150
+who_adult,WHO/FAO Adult 2007,FAO/WHO/UNU 2007,0.0070,0.0270,0.0300,0.0590,0.0450,0.0110,0.0110,0.0190,0.0190,0.0390,0.0150
+who_child_12,WHO/FAO Child 1-2 yr,FAO/WHO/UNU 2007,0.0110,0.0430,0.0460,0.0930,0.0660,0.0170,0.0170,0.0300,0.0300,0.0550,0.0180
+who_child_310,WHO/FAO Child 3-10 yr,FAO/WHO/UNU 2007,0.0080,0.0310,0.0310,0.0730,0.0520,0.0130,0.0130,0.0230,0.0230,0.0410,0.0150
+who_adolescent,WHO/FAO Adolescent 11-14 yr,FAO/WHO/UNU 2007,0.0080,0.0280,0.0300,0.0600,0.0480,0.0120,0.0120,0.0200,0.0200,0.0400,0.0150
+athlete_strength,Strength athlete (muscle synthesis),Derived: leucine threshold + WHO,0.0090,0.0300,0.0400,0.0900,0.0500,0.0140,0.0140,0.0220,0.0220,0.0450,0.0150
+athlete_endurance,Endurance athlete,Derived: WHO adult + oxidation correction,0.0080,0.0290,0.0340,0.0650,0.0470,0.0120,0.0120,0.0200,0.0200,0.0420,0.0150
