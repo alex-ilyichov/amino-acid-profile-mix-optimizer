@@ -186,10 +186,9 @@ if not selected_foods:
         "Select 2–6 foods to optimize."
     )
     st.subheader("Bundled staples")
-    display_cols = ["name", "category", "protein_per_100g"] + ESSENTIAL_COLS[:6]
     st.dataframe(
-        bundled_df[display_cols]
-        .rename(columns={"protein_per_100g": "protein/100g"})
+        bundled_df[["name", "category", "protein_per_100g"]]
+        .rename(columns={"protein_per_100g": "protein / 100g"})
         .sort_values(["category", "name"]),
         hide_index=True,
         use_container_width=True,
