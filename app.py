@@ -127,6 +127,12 @@ with st.sidebar:
     body_weight = st.number_input(
         "Body weight (kg)", min_value=30, max_value=250, value=75, step=1,
     )
+    height_cm = st.number_input(
+        "Height (cm)", min_value=100, max_value=230, value=170, step=1,
+    )
+    age = st.number_input(
+        "Age", min_value=15, max_value=100, value=35, step=1,
+    )
     sex = st.radio(
         "Biological sex",
         ["Male", "Female"],
@@ -134,9 +140,18 @@ with st.sidebar:
         help="Used to estimate body fat percentage. Select the option that reflects your physiology.",
     )
     body_fat_pct = st.number_input(
-        "Body fat % (optional — leave 0 to estimate)",
+        "Body fat % (optional — leave 0 to estimate via BMI)",
         min_value=0, max_value=60, value=0, step=1,
     )
+
+    # Show BMI and sex-specific body fat estimate
+    bmi = body_weight / ((height_cm / 100) ** 2)
+    if sex == "Male":
+        bmi_bf = (1.20 * bmi) + (0.23 * age) - 16.2
+    else:
+        bmi_bf = (1.20 * bmi) + (0.23 * age) - 5.4
+    bmi_bf = max(5.0, min(60.0, bmi_bf))
+    st.caption(f"BMI: **{bmi:.1f}** → estimated body fat (Deurenberg): **{bmi_bf:.1f}%** — enter your actual % above to override")
 
     with st.expander("📏 Calculate body fat via Navy tape method"):
         st.caption(
@@ -145,7 +160,7 @@ with st.sidebar:
             "- **Neck**: around the larynx (Adam's apple), tape horizontal\n"
             "- **Hips** (women only): widest point"
         )
-        navy_height = st.number_input("Height (cm)", min_value=100, max_value=230, value=170, step=1, key="navy_h")
+        navy_height = st.number_input("Height (cm)", min_value=100, max_value=230, value=int(height_cm), step=1, key="navy_h")
         navy_waist  = st.number_input("Waist at navel (cm)", min_value=50, max_value=200, value=85, step=1, key="navy_w")
         navy_neck   = st.number_input("Neck (cm)", min_value=20, max_value=60, value=38, step=1, key="navy_n")
         if sex == "Female":
@@ -193,9 +208,8 @@ with st.sidebar:
     if body_fat_pct > 0:
         fat_frac = body_fat_pct / 100
     else:
-        # BMI-based fallback estimate
-        # We don't have height so use sex-based average body fat
-        fat_frac = 0.20 if sex == "Male" else 0.28
+        # Sex-specific BMI-based estimate (Deurenberg formula)
+        fat_frac = bmi_bf / 100
 
     lean_mass = body_weight * (1 - fat_frac)
     rec_lo = round(lean_mass * lo)
