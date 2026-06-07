@@ -1,25 +1,45 @@
 """
 USDA FoodData Central bulk CSV importer.
 
-Downloads SR Legacy and/or Foundation Foods ZIP archives directly from
-fdc.nal.usda.gov — no API key required — and builds a local SQLite database.
+Downloads SR Legacy ZIP directly from fdc.nal.usda.gov — no API key required —
+and builds a local SQLite database covering all 17 trackable amino acids.
 
-Download URLs (no auth, direct ZIP):
-  SR Legacy (7793 foods, final 2018 release, stable):
+Download URL (no auth, direct ZIP):
+  SR Legacy (6987 protein-containing foods, stable 2018 release):
     https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_csv_2018-04.zip
 
-  Foundation Foods (updated periodically, ~2000 foods, highest quality):
-    https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_foundation_food_csv_2024-10.zip
+Amino acids tracked (17 of 20 standard AAs):
+  Essential (11):   trp thr ile leu lys met cys phe tyr val his
+  Non-essential (6): arg ala asp glu gly pro ser
 
-CSV structure inside each ZIP:
-  food.csv              fdc_id, description, food_category_id, ...
-  food_nutrient.csv     id, fdc_id, nutrient_id, amount, ...
-  nutrient.csv          id, name, unit_name, ...
-  food_category.csv     id, description
+Excluded amino acids and reasons:
+  Hydroxyproline — not a dietary building block; formed post-translationally
+    from proline inside collagen via prolyl hydroxylase (requires Vit C + iron).
+    16% food coverage, only in animal connective tissue. Optimize for proline
+    instead; body handles hydroxylation given adequate Vit C and iron.
+  Glutamine (1233) — zero coverage in USDA; converts to glutamic acid during
+    acid hydrolysis used in lab analysis. Tracked via glutamic acid (glu).
+  Asparagine (1231) — zero coverage; same lab artifact, tracked via aspartic
+    acid (asp).
 
-Nutrient IDs for amino acids (consistent across all FDC datasets):
-  203 Protein    501 Trp  502 Thr  503 Ile  504 Leu  505 Lys
-  506 Met        507 Cys  508 Phe  509 Tyr  510 Val  512 His
+FUTURE: bioavailability/ingestion correction factors per AA
+  Some AAs require cofactors for synthesis or utilization:
+  - Cysteine: spares ~50% of methionine requirement (transsulfuration pathway)
+  - Tyrosine: spares ~50% of phenylalanine (if dietary Phe is sufficient)
+  - Proline → Hydroxyproline: requires Vitamin C (ascorbate) + iron + O2
+  - Tryptophan → Niacin (B3): ~60mg Trp = 1mg niacin (absorption competition)
+  - Glycine: conditionally limiting in high-meat diets (collagen synthesis)
+  - Arginine: conditionally essential during growth, illness, wound healing
+  These correction factors are not yet applied in optimization. The optimizer
+  currently treats all AAs as equally bioavailable from whole food sources.
+  A future --bioavailability-mode flag would apply per-AA absorption coefficients.
+
+Nutrient IDs verified from nutrient.csv in the SR Legacy ZIP:
+  1003 Protein
+  Essential:     1210 Trp  1211 Thr  1212 Ile  1213 Leu  1214 Lys
+                 1215 Met  1216 Cys  1217 Phe  1218 Tyr  1219 Val  1221 His
+  Non-essential: 1220 Arg  1222 Ala  1223 Asp  1224 Glu  1225 Gly
+                 1226 Pro  1227 Ser
 """
 
 from __future__ import annotations
@@ -34,15 +54,20 @@ import requests
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, DownloadColumn, TransferSpeedColumn, TimeElapsedColumn, BarColumn, TextColumn
 
+from .data import AA_COLS as ALL_AA_COLS, ESSENTIAL_COLS, NONESSENTIAL_COLS
+
 console = Console()
 
 DB_PATH = Path.home() / ".amino_optimizer" / "usda_bulk.db"
 
-# Nutrient IDs as they appear in FDC bulk CSV exports (SR Legacy + Foundation)
-# These differ from the REST API nutrient IDs — verified from nutrient.csv in the ZIP.
+# Nutrient IDs verified from nutrient.csv in the SR Legacy ZIP.
 AA_NUTRIENT_IDS: dict[int, str] = {
+    # Essential (indispensable)
     1210: "trp", 1211: "thr", 1212: "ile", 1213: "leu", 1214: "lys",
     1215: "met", 1216: "cys", 1217: "phe", 1218: "tyr", 1219: "val", 1221: "his",
+    # Non-essential (dispensable)
+    1220: "arg", 1222: "ala", 1223: "asp", 1224: "glu", 1225: "gly",
+    1226: "pro", 1227: "ser",
 }
 PROTEIN_ID = 1003
 
@@ -70,10 +95,15 @@ def get_db() -> sqlite3.Connection:
             category_name   TEXT,
             dataset         TEXT,
             protein         REAL,
+            -- Essential AAs (11)
             trp REAL DEFAULT 0, thr REAL DEFAULT 0, ile REAL DEFAULT 0,
             leu REAL DEFAULT 0, lys REAL DEFAULT 0, met REAL DEFAULT 0,
             cys REAL DEFAULT 0, phe REAL DEFAULT 0, tyr REAL DEFAULT 0,
-            val REAL DEFAULT 0, his REAL DEFAULT 0
+            val REAL DEFAULT 0, his REAL DEFAULT 0,
+            -- Non-essential AAs (6) — for whole-body profile optimization
+            arg REAL DEFAULT 0, ala REAL DEFAULT 0, asp REAL DEFAULT 0,
+            glu REAL DEFAULT 0, gly REAL DEFAULT 0, pro REAL DEFAULT 0,
+            ser REAL DEFAULT 0
         )
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS idx_name ON foods(name)")
@@ -170,8 +200,11 @@ def import_dataset(dataset_key: str, force: bool = False) -> int:
     food_df.columns = [c.strip().lower() for c in food_df.columns]
     name_col = "description" if "description" in food_df.columns else food_df.columns[1]
 
-    # Column order must match INSERT: trp,thr,ile,leu,lys,met,cys,phe,tyr,val,his
-    AA_COL_ORDER = [1210, 1211, 1212, 1213, 1214, 1215, 1216, 1217, 1218, 1219, 1221]
+    # Column order must match INSERT and ALL_AA_COLS exactly
+    AA_COL_ORDER = [
+        1210, 1211, 1212, 1213, 1214, 1215, 1216, 1217, 1218, 1219, 1221,  # essential
+        1220, 1222, 1223, 1224, 1225, 1226, 1227,                           # non-essential
+    ]
 
     batch = []
     total_imported = 0
@@ -219,12 +252,16 @@ def import_dataset(dataset_key: str, force: bool = False) -> int:
 
 
 def _insert_batch(conn: sqlite3.Connection, batch: list) -> None:
-    # AA_NUTRIENT_IDS keys sorted: 501,502,503,504,505,506,507,508,509,510,512
     conn.executemany("""
         INSERT OR REPLACE INTO foods
-          (fdc_id,name,category_name,dataset,protein,trp,thr,ile,leu,lys,met,cys,phe,tyr,val,his)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+          (fdc_id,name,category_name,dataset,protein,
+           trp,thr,ile,leu,lys,met,cys,phe,tyr,val,his,
+           arg,ala,asp,glu,gly,pro,ser)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     """, batch)
+
+
+_DB_COLS = ["fdc_id", "name", "category_name", "dataset", "protein"] + ALL_AA_COLS
 
 
 def search_local(
@@ -245,9 +282,9 @@ def search_local(
         where_clauses.append("LOWER(category_name) LIKE ?")
         params.append(f"%{category_filter.lower()}%")
 
+    aa_select = ", ".join(ALL_AA_COLS)
     sql = f"""
-        SELECT fdc_id, name, category_name, dataset, protein,
-               trp, thr, ile, leu, lys, met, cys, phe, tyr, val, his
+        SELECT fdc_id, name, category_name, dataset, protein, {aa_select}
         FROM foods
         WHERE {" AND ".join(where_clauses)}
         ORDER BY protein DESC
@@ -256,21 +293,18 @@ def search_local(
     params.append(max_results)
     rows = conn.execute(sql, params).fetchall()
     conn.close()
-
-    cols = ["fdc_id", "name", "category_name", "dataset", "protein",
-            "trp", "thr", "ile", "leu", "lys", "met", "cys", "phe", "tyr", "val", "his"]
-    return [dict(zip(cols, r)) for r in rows]
+    return [dict(zip(_DB_COLS, r)) for r in rows]
 
 
 def get_local_by_id(fdc_id: int) -> dict | None:
     conn = get_db()
-    cols = ["fdc_id", "name", "category_name", "dataset", "protein",
-            "trp", "thr", "ile", "leu", "lys", "met", "cys", "phe", "tyr", "val", "his"]
+    aa_select = ", ".join(ALL_AA_COLS)
     row = conn.execute(
-        f"SELECT {','.join(cols)} FROM foods WHERE fdc_id=?", (fdc_id,)
+        f"SELECT fdc_id, name, category_name, dataset, protein, {aa_select} FROM foods WHERE fdc_id=?",
+        (fdc_id,)
     ).fetchone()
     conn.close()
-    return dict(zip(cols, row)) if row else None
+    return dict(zip(_DB_COLS, row)) if row else None
 
 
 def db_stats() -> dict:
@@ -285,11 +319,10 @@ def db_stats() -> dict:
 
 def bulk_to_food_row(r: dict) -> dict:
     """Convert a bulk DB row to foods.csv-compatible format."""
-    from .data import AA_COLS
     return {
         "id": f"usda_{r['fdc_id']}",
         "name": r["name"],
         "category": r.get("category_name") or r.get("dataset") or "usda",
         "protein_per_100g": r["protein"],
-        **{aa: r.get(aa, 0.0) for aa in AA_COLS},
+        **{aa: r.get(aa, 0.0) for aa in ALL_AA_COLS},
     }
