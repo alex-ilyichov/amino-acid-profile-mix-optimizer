@@ -185,14 +185,6 @@ if not selected_foods:
         "or expand 'bundled foods' for quick access to 21 pre-loaded staples. "
         "Select 2–6 foods to optimize."
     )
-    st.subheader("Bundled staples")
-    st.dataframe(
-        bundled_df[["name", "category", "protein_per_100g"]]
-        .rename(columns={"protein_per_100g": "protein / 100g"})
-        .sort_values(["category", "name"]),
-        hide_index=True,
-        width="stretch",
-    )
     st.stop()
 
 # ── Build food matrix ─────────────────────────────────────────────────────────
