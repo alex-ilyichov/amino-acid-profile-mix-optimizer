@@ -191,7 +191,7 @@ if not selected_foods:
         .rename(columns={"protein_per_100g": "protein / 100g"})
         .sort_values(["category", "name"]),
         hide_index=True,
-        use_container_width=True,
+        width="stretch",
     )
     st.stop()
 
@@ -285,7 +285,7 @@ with left:
             "Weight":   f"{float(frac):.1%}",
             "Grams":    f"{float(grams):.0f} g",
         })
-    st.dataframe(pd.DataFrame(blend_rows), hide_index=True, use_container_width=True)
+    st.dataframe(pd.DataFrame(blend_rows), hide_index=True, width="stretch")
 
     if result.infeasible_aa:
         st.warning(
@@ -327,7 +327,7 @@ with right:
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)  # noqa: deprecated but width arg not yet stable
 
 st.divider()
 
@@ -344,10 +344,10 @@ with st.expander("Full amino acid profile (all 17 AAs incl. non-essential)", exp
             "AA":                AA_LABELS[aa],
             "Type":              "essential" if aa in ESSENTIAL_COLS else "non-essential",
             "Blend (g/g prot)":  round(b, 4),
-            "Target (g/g prot)": round(t, 4) if t > 0 else "—",
+            "Target (g/g prot)": round(t, 4) if t > 0 else None,
             "Coverage":          f"{cov:.0f}%" if t > 0 else "n/a",
         })
-    st.dataframe(pd.DataFrame(full_rows), hide_index=True, use_container_width=True)
+    st.dataframe(pd.DataFrame(full_rows), hide_index=True, width="stretch")
 
 # ── Suggestions ───────────────────────────────────────────────────────────────
 
@@ -411,6 +411,6 @@ if result.limiting:
             break
 
     if all_suggestions:
-        st.dataframe(pd.DataFrame(all_suggestions), hide_index=True, use_container_width=True)
+        st.dataframe(pd.DataFrame(all_suggestions), hide_index=True, width="stretch")
 else:
     st.success("✓ All essential amino acids fully met.")
