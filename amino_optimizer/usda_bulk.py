@@ -277,7 +277,8 @@ def search_local(
     """Full-text search against local bulk DB. No network required."""
     conn = get_db()
     terms = query.lower().split()
-    where_clauses = ["protein >= ?"]
+    # Exclude foods with no AA data at all (protein recorded but AAs missing in USDA)
+    where_clauses = ["protein >= ?", "(trp > 0 OR leu > 0 OR lys > 0 OR met > 0)"]
     params: list = [min_protein]
     for term in terms:
         where_clauses.append("LOWER(name) LIKE ?")
