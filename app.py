@@ -104,7 +104,12 @@ with st.sidebar:
     body_weight = st.number_input(
         "Body weight (kg)", min_value=30, max_value=250, value=75, step=1,
     )
-    sex = st.radio("Sex", ["Male", "Female"], horizontal=True)
+    sex = st.radio(
+        "Biological sex",
+        ["Male", "Female"],
+        horizontal=True,
+        help="Used to estimate body fat percentage. Select the option that reflects your physiology.",
+    )
     body_fat_pct = st.number_input(
         "Body fat % (optional — leave 0 to estimate)",
         min_value=0, max_value=60, value=0, step=1,
