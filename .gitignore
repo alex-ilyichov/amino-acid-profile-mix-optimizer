@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.env
+.venv/
+venv/
+*.db-journal
+# Local USDA cache (not the repo-committed one in data/)
+~/.amino_optimizer/

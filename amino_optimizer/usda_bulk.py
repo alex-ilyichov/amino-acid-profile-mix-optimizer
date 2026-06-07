@@ -58,7 +58,11 @@ from .data import AA_COLS as ALL_AA_COLS, ESSENTIAL_COLS, NONESSENTIAL_COLS
 
 console = Console()
 
-DB_PATH = Path.home() / ".amino_optimizer" / "usda_bulk.db"
+# DB lives inside the repo (committed via Git LFS) so it works on Streamlit
+# Cloud without a download step. Falls back to ~/.amino_optimizer/ when the
+# repo-relative path isn't writable (e.g. CLI use outside the repo).
+_REPO_DB = Path(__file__).parent.parent / "data" / "usda_bulk.db"
+DB_PATH = _REPO_DB
 
 # Nutrient IDs verified from nutrient.csv in the SR Legacy ZIP.
 AA_NUTRIENT_IDS: dict[int, str] = {

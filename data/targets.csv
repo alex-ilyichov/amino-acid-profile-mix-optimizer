@@ -1,13 +1,35 @@
 # Reference amino acid scoring patterns (g AA per g protein)
-# Source: FAO/WHO/UNU 2007 "Protein and Amino Acid Requirements in Human Nutrition"
-#   Table 7, p.150. Values in mg AA / g protein, converted to g/g here.
-# met+cys and phe+tyr are WHO combined pairs; stored individually (split evenly)
+#
+# Essential AA sources:
+#   WHO 2007: FAO/WHO/UNU 2007 "Protein and Amino Acid Requirements in Human Nutrition"
+#             Table 7, p.150. Values in mg AA / g protein, converted to g/g.
+#   FAO 2013: FAO "Dietary Protein Quality Evaluation in Human Nutrition" (DIAAS method)
+#             Adults and children 3-10yr use same pattern (His=16, Ile=31, Leu=61,
+#             Lys=48, SAA=23, AAA=41, Thr=25, Trp=6.6, Val=40 mg/g protein).
+#
+# met+cys and phe+tyr are WHO/FAO combined pairs; stored individually (split evenly)
 #   as a practical approximation — the optimizer treats them as separate AAs.
-# Food-derived targets (whole_egg, beef_90, etc.) are generated at runtime from foods.csv
-id,name,source,trp,thr,ile,leu,lys,met,cys,phe,tyr,val,his
-who_adult,WHO/FAO Adult 2007,FAO/WHO/UNU 2007,0.0070,0.0270,0.0300,0.0590,0.0450,0.0110,0.0110,0.0190,0.0190,0.0390,0.0150
-who_child_12,WHO/FAO Child 1-2 yr,FAO/WHO/UNU 2007,0.0110,0.0430,0.0460,0.0930,0.0660,0.0170,0.0170,0.0300,0.0300,0.0550,0.0180
-who_child_310,WHO/FAO Child 3-10 yr,FAO/WHO/UNU 2007,0.0080,0.0310,0.0310,0.0730,0.0520,0.0130,0.0130,0.0230,0.0230,0.0410,0.0150
-who_adolescent,WHO/FAO Adolescent 11-14 yr,FAO/WHO/UNU 2007,0.0080,0.0280,0.0300,0.0600,0.0480,0.0120,0.0120,0.0200,0.0200,0.0400,0.0150
-athlete_strength,Strength athlete (muscle synthesis),Derived: leucine threshold + WHO,0.0090,0.0300,0.0400,0.0900,0.0500,0.0140,0.0140,0.0220,0.0220,0.0450,0.0150
-athlete_endurance,Endurance athlete,Derived: WHO adult + oxidation correction,0.0080,0.0290,0.0340,0.0650,0.0470,0.0120,0.0120,0.0200,0.0200,0.0420,0.0150
+#
+# Non-essential AAs: zero for WHO/FAO scoring patterns (they define essentials only).
+#   human_body target includes non-essential composition.
+#
+# human_body: whole-body protein AA composition (g per g protein).
+#   Source: Lentner 1981 (Geigy Scientific Tables Vol.1), cross-validated by
+#   isotope dilution studies (Waterlow 1984, Millward 1999).
+#   Interpretation: Glu+Gln combined as glu (glutamine lab artifact — acid hydrolysis).
+#   Asp+Asn combined as asp (same reason). Non-essential AAs reflect body protein
+#   synthesis demand — matching this profile minimizes transamination burden.
+#   These are NOT requirements (body can synthesize non-essentials); they represent
+#   the most efficient supply pattern for whole-body protein turnover (~300g/day).
+#
+# Food-derived targets (whole_egg, beef_90, etc.) are generated at runtime from foods.csv.
+id,name,source,trp,thr,ile,leu,lys,met,cys,phe,tyr,val,his,arg,ala,asp,glu,gly,pro,ser
+who_adult,WHO/FAO Adult 2007,FAO/WHO/UNU 2007,0.0070,0.0270,0.0300,0.0590,0.0450,0.0110,0.0110,0.0190,0.0190,0.0390,0.0150,0,0,0,0,0,0,0
+who_child_12,WHO/FAO Child 1-2 yr,FAO/WHO/UNU 2007,0.0110,0.0430,0.0460,0.0930,0.0660,0.0170,0.0170,0.0300,0.0300,0.0550,0.0180,0,0,0,0,0,0,0
+who_child_310,WHO/FAO Child 3-10 yr,FAO/WHO/UNU 2007,0.0080,0.0310,0.0310,0.0730,0.0520,0.0130,0.0130,0.0230,0.0230,0.0410,0.0150,0,0,0,0,0,0,0
+who_adolescent,WHO/FAO Adolescent 11-14 yr,FAO/WHO/UNU 2007,0.0080,0.0280,0.0300,0.0600,0.0480,0.0120,0.0120,0.0200,0.0200,0.0400,0.0150,0,0,0,0,0,0,0
+fao2013_adult,FAO 2013 DIAAS Adult,FAO 2013 DIAAS,0.0066,0.0250,0.0310,0.0610,0.0480,0.0115,0.0115,0.0205,0.0205,0.0400,0.0160,0,0,0,0,0,0,0
+fao2013_child_310,FAO 2013 DIAAS Child 3-10 yr,FAO 2013 DIAAS,0.0066,0.0250,0.0310,0.0610,0.0480,0.0115,0.0115,0.0205,0.0205,0.0400,0.0160,0,0,0,0,0,0,0
+athlete_strength,Strength athlete (muscle synthesis),Derived: leucine threshold + WHO,0.0090,0.0300,0.0400,0.0900,0.0500,0.0140,0.0140,0.0220,0.0220,0.0450,0.0150,0,0,0,0,0,0,0
+athlete_endurance,Endurance athlete,Derived: WHO adult + oxidation correction,0.0080,0.0290,0.0340,0.0650,0.0470,0.0120,0.0120,0.0200,0.0200,0.0420,0.0150,0,0,0,0,0,0,0
+human_body,Human body protein composition,Lentner 1981 / Waterlow 1984,0.0110,0.0440,0.0380,0.0780,0.0700,0.0180,0.0190,0.0400,0.0320,0.0490,0.0250,0.0540,0.0600,0.0920,0.1450,0.0650,0.0520,0.0510
