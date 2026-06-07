@@ -1,0 +1,6 @@
+# Reference amino acid scoring patterns (g AA per g protein)
+# who_adult: FAO/WHO/UNU 2007 recommended pattern for adults
+# Food-based targets (whole_egg, beef_90, etc.) are derived at runtime from foods.csv
+# met_cys and phe_tyr are combined minimums per WHO; stored split evenly here as approximation.
+id,name,source,trp,thr,ile,leu,lys,met,cys,phe,tyr,val,his
+who_adult,WHO/FAO/UNU Adult 2007,FAO/WHO/UNU 2007,0.0060,0.0230,0.0300,0.0590,0.0450,0.0110,0.0110,0.0190,0.0190,0.0390,0.0150

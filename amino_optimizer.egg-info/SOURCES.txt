@@ -1,0 +1,14 @@
+pyproject.toml
+amino_optimizer/__init__.py
+amino_optimizer/cli.py
+amino_optimizer/data.py
+amino_optimizer/display.py
+amino_optimizer/solver.py
+amino_optimizer.egg-info/PKG-INFO
+amino_optimizer.egg-info/SOURCES.txt
+amino_optimizer.egg-info/dependency_links.txt
+amino_optimizer.egg-info/entry_points.txt
+amino_optimizer.egg-info/requires.txt
+amino_optimizer.egg-info/top_level.txt
+amino_optimizer/../data/foods.csv
+amino_optimizer/../data/targets.csv

@@ -1,0 +1,2 @@
+[console_scripts]
+amino-opt = amino_optimizer.cli:main

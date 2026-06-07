@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "amino-optimizer"
+version = "0.1.0"
+description = "Optimize food blends to match a target amino acid profile"
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.0",
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "pandas>=2.0",
+    "rich>=13.0",
+]
+
+[project.scripts]
+amino-opt = "amino_optimizer.cli:main"
+
+[tool.setuptools.package-data]
+amino_optimizer = ["../data/*.csv"]
+
+[tool.setuptools.packages.find]
+where = ["."]
