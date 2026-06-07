@@ -138,6 +138,45 @@ with st.sidebar:
         min_value=0, max_value=60, value=0, step=1,
     )
 
+    with st.expander("📏 Calculate body fat via Navy tape method"):
+        st.caption(
+            "Measure with a flexible tape. All in **cm**.\n\n"
+            "- **Waist**: at navel level, not the narrowest point\n"
+            "- **Neck**: around the larynx (Adam's apple), tape horizontal\n"
+            "- **Hips** (women only): widest point"
+        )
+        navy_height = st.number_input("Height (cm)", min_value=100, max_value=230, value=170, step=1, key="navy_h")
+        navy_waist  = st.number_input("Waist at navel (cm)", min_value=50, max_value=200, value=85, step=1, key="navy_w")
+        navy_neck   = st.number_input("Neck (cm)", min_value=20, max_value=60, value=38, step=1, key="navy_n")
+        if sex == "Female":
+            navy_hip = st.number_input("Hips (cm)", min_value=50, max_value=200, value=95, step=1, key="navy_hp")
+        else:
+            navy_hip = None
+
+        if navy_waist > navy_neck and navy_height > 0:
+            import math
+            if sex == "Male":
+                navy_bf = 86.010 * math.log10(navy_waist - navy_neck) - 70.041 * math.log10(navy_height) + 36.76
+            else:
+                if navy_hip and (navy_waist + navy_hip) > navy_neck:
+                    navy_bf = 163.205 * math.log10(navy_waist + navy_hip - navy_neck) - 97.684 * math.log10(navy_height) - 78.387
+                else:
+                    navy_bf = None
+
+            if navy_bf and 5 < navy_bf < 60:
+                st.success(f"Estimated body fat: **{navy_bf:.1f}%**")
+                if st.button(f"Use {navy_bf:.1f}% as my body fat"):
+                    st.session_state["navy_bf_result"] = round(navy_bf)
+                    st.rerun()
+            else:
+                st.warning("Check your measurements — result out of range.")
+        else:
+            st.caption("Enter measurements above to calculate.")
+
+    # Apply Navy result if user clicked "Use"
+    if "navy_bf_result" in st.session_state and body_fat_pct == 0:
+        body_fat_pct = st.session_state["navy_bf_result"]
+
     LIFESTYLE_FACTORS = {
         "Sedentary (desk job, little exercise)":   (0.8,  0.8),
         "Lightly active (exercise 1–3×/week)":     (1.0,  1.2),
