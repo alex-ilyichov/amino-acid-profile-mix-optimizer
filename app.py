@@ -5,6 +5,9 @@ Run with:
     streamlit run app.py
 """
 
+import math
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
@@ -73,7 +76,8 @@ usda_count = db_info["by_dataset"].get("sr_legacy", 0)
 
 @st.cache_data
 def get_base_data():
-    foods = load_foods()
+    supp = Path(__file__).parent / "data" / "supplementary_foods.csv"
+    foods = load_foods(extra_csv=supp if supp.exists() else None)
     targets = load_targets(foods)
     return foods, targets
 
@@ -170,7 +174,6 @@ with st.sidebar:
             navy_hip = None
 
         if navy_waist > navy_neck and navy_height > 0:
-            import math
             if sex == "Male":
                 navy_bf = 86.010 * math.log10(navy_waist - navy_neck) - 70.041 * math.log10(navy_height) + 36.76
             else:
@@ -342,9 +345,30 @@ if len(food_ids) < 1:
 target_row  = targets_df[targets_df["id"] == target_id].iloc[0]
 target_norm = target_vector(target_row)
 
+# Cap weight fraction of low-protein foods so they can't dominate the blend.
+# A food with <5g protein/100g (e.g. potato, milk, fruit) is fine as a side
+# but should never be the primary protein source — cap at 25% of blend weight.
+MAX_LOW_PROTEIN_FRACTION = 0.25
+LOW_PROTEIN_THRESHOLD = 5.0  # g per 100g
+max_fractions = np.array([
+    MAX_LOW_PROTEIN_FRACTION if p < LOW_PROTEIN_THRESHOLD else 1.0
+    for p in food_proteins
+])
+
+# Warn if any selected food is low-protein
+low_protein_foods = [food_names[i] for i, p in enumerate(food_proteins) if p < LOW_PROTEIN_THRESHOLD]
+if low_protein_foods:
+    st.warning(
+        f"⚠️ **Low-protein food(s) in blend:** {', '.join(low_protein_foods)}. "
+        f"Foods under {LOW_PROTEIN_THRESHOLD}g protein/100g are capped at "
+        f"{MAX_LOW_PROTEIN_FRACTION:.0%} of blend weight — they contribute flavour "
+        "and micronutrients but can't be your main protein source."
+    )
+
 result = optimize(
     food_ids, food_names, food_proteins, food_aa, target_norm,
     protein_target=float(protein_g),
+    max_fractions=max_fractions,
 )
 
 ess_idx  = [AA_COLS.index(aa) for aa in ESSENTIAL_COLS]
