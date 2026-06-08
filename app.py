@@ -414,19 +414,26 @@ with left:
     st.subheader("Blend")
     blend_rows = []
     for fid, frac, grams in zip(result.food_ids, result.weight_fractions, result.food_grams):
-        if float(frac) < 0.005:
-            continue
-        food_cat = next(
-            (r.get("category", r.get("category_name", "")) for r in food_rows if r.get("id") == fid or f"usda_{r.get('fdc_id')}" == fid),
-            ""
+        food_match = next(
+            (r for r in food_rows if r.get("id") == fid or f"usda_{r.get('fdc_id')}" == fid),
+            None
         )
+        if food_match is None:
+            continue
+        used = float(frac) >= 0.005
         blend_rows.append({
-            "Food":     next(r["name"] for r in food_rows if r.get("id") == fid or f"usda_{r.get('fdc_id')}" == fid),
-            "Category": food_cat,
-            "Weight":   f"{float(frac):.1%}",
-            "Grams":    f"{float(grams):.0f} g",
+            "Food":     food_match["name"],
+            "Category": food_match.get("category", food_match.get("category_name", "")),
+            "Weight":   f"{float(frac):.1%}" if used else "—",
+            "Grams":    f"{float(grams):.0f} g" if used else "not used",
         })
     st.dataframe(pd.DataFrame(blend_rows), hide_index=True, width="stretch")
+    unused = [r["Food"] for r in blend_rows if r["Grams"] == "not used"]
+    if unused:
+        st.caption(
+            f"ℹ️ {', '.join(unused)} {'was' if len(unused) == 1 else 'were'} given near-zero weight "
+            "— they don't improve your most limiting amino acid."
+        )
 
     if result.infeasible_aa:
         st.warning(
