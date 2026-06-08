@@ -47,21 +47,26 @@
 #         Digestibility ~75-80% (lower than insects); cultivation water-efficient.
 #         Commercial strains (Lemnaceae) trending in Europe/SE Asia as protein crop.
 #
-# silkworm_pupae_dried — Bombyx mori, pupae, dried whole
-#   Primary source: Hăbeanu et al. (2024) Insects 15(5):332 (PMC11122254)
-#     Meta-review of ~16 studies; all values g/100g dry matter (DM).
-#     Protein: 60.47 ± 2.36 g/100g DM.
-#   His EXCEPTION: Dataset C mean (6.63 ± 1.73) flagged as anomalous
-#     (high inter-study variability, outlier studies drove the mean).
-#     Cross-validated with Jeyaprakashsabari & Aanand 2008 (via PMC10051144):
-#     2.6 g/100g protein × 0.6047 protein fraction = 1.57 g/100g DM.
-#     Also consistent with Kumar et al. via Hăbeanu 2023 (2.5 → 1.51 g/100g DM).
-#     His = 1.57 used here (conservative, cross-validated).
-#   Note: EFSA has not issued a novel food opinion for Bombyx mori (June 2026).
-#     FAO 2013 confirms it meets FAO/WHO/UNU EAA requirements. PDCAAS ≈ 0.86.
+# silkworm_pupae_dried — Bombyx mori (mulberry silkworm), pupae, deoiled dried
+# eri_silkworm_dried  — Samia ricini (ERI silkworm), pupae, deoiled dried
+# muga_silkworm_dried — Antheraea assamensis (Muga silkworm), pupae, deoiled dried
+#   Source: Kashyap et al. (2023) The Pharma Innovation Journal SP-12(8):1140-1142
+#     DOI: 10.22271/tpi.2023.v12.i8So.22222
+#     Direct HPLC measurement on deoiled pupal powder (n-hexane soxhlet defatted,
+#     acid-hydrolysed 6N HCl 110°C 22h). All AA values in g/100g crude protein
+#     (Table 2); converted to g/100g food using protein content from Table 1 (deoiled):
+#       Bombyx mori 55.71%, Samia ricini 56.15%, Antheraea assamensis 63.53%.
+#   Trp NOT MEASURED (acid hydrolysis destroys Trp). Estimated at 0.9 g/100g protein
+#     (Jeyaprakashsabari & Aanand 2008, de-oiled B. mori; consistent with cricket/
+#     mealworm/BSF Trp ratios of ~1% of protein from FAO 2013 data).
+#   Note: Muga (Antheraea assamensis) is a non-mulberry wild silkworm; highest
+#     protein (63.53%) and Phe of the three. ERI has very low Cys (0.5 g/100g prot).
+#   All three species confirmed to meet FAO/WHO/UNU 1985 EAA requirements (Table 3).
 #
 id,name,category,protein_per_100g,trp,thr,ile,leu,lys,met,cys,phe,tyr,val,his,arg,ala,asp,glu,gly,pro,ser
-silkworm_pupae_dried,Silkworm pupae dried (Bombyx mori),insect,60.47,1.220,4.880,3.490,5.550,6.010,3.940,1.130,4.140,5.610,4.670,1.570,4.220,5.520,7.910,14.390,5.580,5.200,5.040
+silkworm_pupae_dried,Silkworm pupae dried (Bombyx mori),insect,55.71,0.501,2.953,3.008,4.568,4.011,2.507,0.780,2.841,2.953,3.008,1.337,3.760,3.008,6.016,8.189,2.563,2.284,2.579
+eri_silkworm_dried,ERI silkworm pupae dried (Samia ricini),insect,56.15,0.505,2.527,2.454,3.706,3.594,1.280,0.281,2.880,3.599,2.965,1.421,2.386,3.369,5.447,7.300,2.661,3.582,2.880
+muga_silkworm_dried,Muga silkworm pupae dried (Antheraea assamensis),insect,63.53,0.572,2.732,4.002,3.939,4.193,1.080,1.016,4.638,2.668,3.875,1.842,2.859,3.494,4.066,8.132,2.827,6.544,2.732
 cricket_dried,Cricket whole dried (Acheta domesticus),insect,65.5,0.660,2.358,3.084,4.953,3.960,1.254,0.659,2.599,3.330,3.740,1.969,4.641,5.254,6.100,8.910,3.234,2.978,2.873
 mealworm_dried,Mealworm larvae dried (Tenebrio molitor),insect,52.0,0.593,1.986,3.302,4.210,3.120,0.935,0.624,2.350,3.000,3.550,1.573,3.108,4.498,4.940,6.916,2.888,2.858,2.503
 bsf_larvae_dried,Black soldier fly larvae dried (Hermetia illucens),insect,42.1,0.436,1.701,2.073,3.199,2.631,0.862,0.505,1.724,2.490,2.710,1.137,2.632,3.423,3.980,5.360,2.420,2.113,1.963
