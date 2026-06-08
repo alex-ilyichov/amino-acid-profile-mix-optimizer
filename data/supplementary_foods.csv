@@ -26,6 +26,26 @@
 #   Note: profile varies significantly with larval diet; values represent
 #           food-waste reared larvae (most common commercial scenario)
 #
+# SEAFOOD (missing from USDA SR Legacy)
+# ------------------------------------
+# sea_urchin_roe_grey — Strongylocentrotus intermedius (grey sea urchin), raw roe
+# sea_urchin_roe_black — Strongylocentrotus nudus (black sea urchin), raw roe
+#   Source: Matveeva et al. (2021) Separations 8(10):174
+#     DOI: 10.3390/sep8100174 — Open access, CC BY 4.0
+#     Species: Far Eastern seas (Sea of Japan / Pacific Russia).
+#     Measurement: Hitachi L-8800 amino acid analyzer after acid hydrolysis.
+#     All AA values in Table 2 as g/100g crude protein; converted to g/100g food
+#     using protein from Table 1 (wet weight fresh roe):
+#       S. intermedius 13.9 g/100g, S. nudus 13.8 g/100g.
+#   Trp NOT MEASURED (acid hydrolysis). Estimated at ~1.25% of protein
+#     (Japanese MEXT 2020 tables: 200mg Trp / 16g protein = 1.25%).
+#   Phe+Tyr combined in Table 2: split 55:45 (Phe:Tyr).
+#   Met+Cys combined in Table 2: split 55:45 (Met:Cys).
+#   Basis: FRESH/RAW roe (wet weight) — protein ~14g/100g, not dried.
+#   Note: essential AA scores all >100 vs FAO/WHO standard (Table 2);
+#     Thr score 165 (S. intermedius) and 172 (S. nudus) — exceptionally high.
+#     Biological value = 102% vs casein (Tetrahymena pyriformis bioassay).
+#
 # PLANTS (missing from USDA SR Legacy)
 # --------------------------------------
 # moringa_leaf_dried — Moringa oleifera, leaf powder, dried
@@ -70,5 +90,7 @@ muga_silkworm_dried,Muga silkworm pupae dried (Antheraea assamensis),insect,63.5
 cricket_dried,Cricket whole dried (Acheta domesticus),insect,65.5,0.660,2.358,3.084,4.953,3.960,1.254,0.659,2.599,3.330,3.740,1.969,4.641,5.254,6.100,8.910,3.234,2.978,2.873
 mealworm_dried,Mealworm larvae dried (Tenebrio molitor),insect,52.0,0.593,1.986,3.302,4.210,3.120,0.935,0.624,2.350,3.000,3.550,1.573,3.108,4.498,4.940,6.916,2.888,2.858,2.503
 bsf_larvae_dried,Black soldier fly larvae dried (Hermetia illucens),insect,42.1,0.436,1.701,2.073,3.199,2.631,0.862,0.505,1.724,2.490,2.710,1.137,2.632,3.423,3.980,5.360,2.420,2.113,1.963
+sea_urchin_roe_grey,Sea urchin roe raw (Strongylocentrotus intermedius),seafood,13.9,0.174,0.917,0.653,0.987,0.959,0.352,0.288,0.550,0.450,0.806,1.015,0.765,0.792,1.612,1.835,0.584,0.403,0.723
+sea_urchin_roe_black,Sea urchin roe raw (Strongylocentrotus nudus),seafood,13.8,0.173,0.952,0.635,0.966,0.856,0.365,0.298,0.592,0.484,0.759,0.938,0.718,0.800,1.670,1.780,0.524,0.455,0.745
 moringa_leaf_dried,Moringa leaf powder dried (Moringa oleifera),plant,27.1,0.379,1.146,1.049,1.956,1.324,0.346,0.357,1.315,0.890,1.284,0.617,1.326,1.553,2.872,2.845,1.184,1.212,1.068
 duckweed_dried,Duckweed dried (Lemna / Landoltia),plant,35.0,0.595,1.540,1.610,2.625,1.890,0.632,0.368,1.610,0.980,1.820,0.718,1.925,2.310,3.430,4.375,1.960,1.575,1.680
