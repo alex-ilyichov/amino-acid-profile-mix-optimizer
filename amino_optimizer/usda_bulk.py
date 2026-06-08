@@ -281,14 +281,15 @@ def search_local(
     where_clauses = ["protein >= ?", "(trp > 0 OR leu > 0 OR lys > 0 OR met > 0)"]
     params: list = [min_protein]
     for term in terms:
-        # Word-boundary-aware: USDA names use ", " as separator (e.g. "Chicken, breast, raw").
-        # Normalize by replacing commas with spaces before matching — achieved by checking
-        # all natural boundary positions: space-padded, start-of-string, end-of-string.
+        # Word-start prefix matching: term must begin a word, not appear mid-word.
+        # USDA names use ", " as separator → normalize commas to spaces first.
+        # "frye" matches "fryers" (word starts with frye) ✓
+        # "rye"  does NOT match "fryers" (word starts with "f", not "rye") ✓
         where_clauses.append(
-            "(LOWER(REPLACE(name, ',', ' ')) LIKE ? OR LOWER(REPLACE(name, ',', ' ')) LIKE ? "
-            "OR LOWER(REPLACE(name, ',', ' ')) LIKE ? OR LOWER(name) = ?)"
+            "(LOWER(REPLACE(name, ',', ' ')) LIKE ? "
+            "OR LOWER(REPLACE(name, ',', ' ')) LIKE ?)"
         )
-        params += [f"% {term} %", f"{term} %", f"% {term}", term]
+        params += [f"{term}%", f"% {term}%"]
     if category_filter:
         where_clauses.append("LOWER(category_name) LIKE ?")
         params.append(f"%{category_filter.lower()}%")
