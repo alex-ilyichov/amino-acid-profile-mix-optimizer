@@ -47,7 +47,21 @@
 #         Digestibility ~75-80% (lower than insects); cultivation water-efficient.
 #         Commercial strains (Lemnaceae) trending in Europe/SE Asia as protein crop.
 #
+# silkworm_pupae_dried — Bombyx mori, pupae, dried whole
+#   Primary source: Hăbeanu et al. (2024) Insects 15(5):332 (PMC11122254)
+#     Meta-review of ~16 studies; all values g/100g dry matter (DM).
+#     Protein: 60.47 ± 2.36 g/100g DM.
+#   His EXCEPTION: Dataset C mean (6.63 ± 1.73) flagged as anomalous
+#     (high inter-study variability, outlier studies drove the mean).
+#     Cross-validated with Jeyaprakashsabari & Aanand 2008 (via PMC10051144):
+#     2.6 g/100g protein × 0.6047 protein fraction = 1.57 g/100g DM.
+#     Also consistent with Kumar et al. via Hăbeanu 2023 (2.5 → 1.51 g/100g DM).
+#     His = 1.57 used here (conservative, cross-validated).
+#   Note: EFSA has not issued a novel food opinion for Bombyx mori (June 2026).
+#     FAO 2013 confirms it meets FAO/WHO/UNU EAA requirements. PDCAAS ≈ 0.86.
+#
 id,name,category,protein_per_100g,trp,thr,ile,leu,lys,met,cys,phe,tyr,val,his,arg,ala,asp,glu,gly,pro,ser
+silkworm_pupae_dried,Silkworm pupae dried (Bombyx mori),insect,60.47,1.220,4.880,3.490,5.550,6.010,3.940,1.130,4.140,5.610,4.670,1.570,4.220,5.520,7.910,14.390,5.580,5.200,5.040
 cricket_dried,Cricket whole dried (Acheta domesticus),insect,65.5,0.660,2.358,3.084,4.953,3.960,1.254,0.659,2.599,3.330,3.740,1.969,4.641,5.254,6.100,8.910,3.234,2.978,2.873
 mealworm_dried,Mealworm larvae dried (Tenebrio molitor),insect,52.0,0.593,1.986,3.302,4.210,3.120,0.935,0.624,2.350,3.000,3.550,1.573,3.108,4.498,4.940,6.916,2.888,2.858,2.503
 bsf_larvae_dried,Black soldier fly larvae dried (Hermetia illucens),insect,42.1,0.436,1.701,2.073,3.199,2.631,0.862,0.505,1.724,2.490,2.710,1.137,2.632,3.423,3.980,5.360,2.420,2.113,1.963
