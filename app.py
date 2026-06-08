@@ -241,6 +241,26 @@ with st.sidebar:
     )
 
     if query.strip():
+        q_lower = query.strip().lower()
+
+        # Search bundled/supplementary foods first (insects, moringa, duckweed, etc.)
+        bundled_hits = bundled_df[
+            bundled_df["name"].str.lower().str.contains(q_lower, regex=False) |
+            bundled_df["id"].str.lower().str.contains(q_lower, regex=False)
+        ]
+        for _, brow in bundled_hits.iterrows():
+            fid = brow["id"]
+            already = fid in st.session_state.selected_foods
+            display_name = brow["name"]
+            label = f"{display_name}  ({brow['category']}, {brow['protein_per_100g']:.0f}g prot/100g)"
+            if already:
+                st.caption(f"✓ {display_name}")
+            else:
+                if st.button(f"+ {label}", key=f"add_{fid}"):
+                    st.session_state.selected_foods[fid] = brow.to_dict()
+                    st.rerun()
+
+        # Search USDA SQLite database
         hits = search_local(query.strip(), max_results=20, min_protein=1.0)
         if hits:
             # Deduplicate by full name — USDA has many near-identical entries
@@ -267,7 +287,7 @@ with st.sidebar:
                 shown += 1
                 if shown >= 8:
                     break
-        else:
+        elif bundled_hits.empty:
             st.caption("No results.")
 
     # Bundled quick-add
