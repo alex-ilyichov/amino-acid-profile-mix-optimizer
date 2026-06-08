@@ -365,30 +365,9 @@ if len(food_ids) < 1:
 target_row  = targets_df[targets_df["id"] == target_id].iloc[0]
 target_norm = target_vector(target_row)
 
-# Cap weight fraction of low-protein foods so they can't dominate the blend.
-# A food with <5g protein/100g (e.g. potato, milk, fruit) is fine as a side
-# but should never be the primary protein source — cap at 25% of blend weight.
-MAX_LOW_PROTEIN_FRACTION = 0.25
-LOW_PROTEIN_THRESHOLD = 5.0  # g per 100g
-max_fractions = np.array([
-    MAX_LOW_PROTEIN_FRACTION if p < LOW_PROTEIN_THRESHOLD else 1.0
-    for p in food_proteins
-])
-
-# Warn if any selected food is low-protein
-low_protein_foods = [food_names[i] for i, p in enumerate(food_proteins) if p < LOW_PROTEIN_THRESHOLD]
-if low_protein_foods:
-    st.warning(
-        f"⚠️ **Low-protein food(s) in blend:** {', '.join(low_protein_foods)}. "
-        f"Foods under {LOW_PROTEIN_THRESHOLD}g protein/100g are capped at "
-        f"{MAX_LOW_PROTEIN_FRACTION:.0%} of blend weight — they contribute flavour "
-        "and micronutrients but can't be your main protein source."
-    )
-
 result = optimize(
     food_ids, food_names, food_proteins, food_aa, target_norm,
     protein_target=float(protein_g),
-    max_fractions=max_fractions,
 )
 
 ess_idx  = [AA_COLS.index(aa) for aa in ESSENTIAL_COLS]
