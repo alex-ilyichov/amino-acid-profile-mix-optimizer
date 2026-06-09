@@ -9,14 +9,22 @@ Given n foods with weight fractions x_i (x_i >= 0, sum = 1):
     blend_aa_j      = sum_i x_i * aa_ij         [g AA j per 100g blend]
     blend_norm_j    = blend_aa_j / blend_protein [g AA j per g protein]
 
-Minimise  sum_j max(0, target_j - blend_norm_j)^2      [deficit-only]
-s.t.      sum_i x_i = 1,  x_i >= 0  (optionally x_i <= max_i)
+Minimise  sum_j max(0, target_j - blend_norm_j)^2          [deficit-only, primary]
+        + ε · (1 / blend_protein_fraction)                 [min weight, secondary]
+s.t.      sum_i x_i = 1,  x_i >= 0
 
-One-sided objective: only deficits are penalised. Excess AAs are
-metabolised harmlessly, so overshooting a target does not cost anything.
-A symmetric (blend - target)^2 objective would cause the solver to prefer
-uniformly mediocre blends over blends that nail most AAs but exceed the
-target on a few — the wrong behaviour for dietary optimisation.
+Two-level priority (lexicographic via ε scaling):
+  1. Primary: minimize essential AA deficits. A 50g addition of chips is
+     valid if it fixes a real deficit — the AA objective always wins.
+  2. Secondary: among blends with equal AA coverage, prefer the one that
+     requires the least total food to deliver the protein target. This
+     breaks the flat objective landscape when AA coverage is already 100%,
+     ensuring protein-dense foods (salmon) dominate low-protein ones (chips)
+     rather than landing at an arbitrary point in the degenerate region.
+
+ε is calibrated so any nonzero AA improvement always outweighs any weight
+saving: ε = 1e-6 · min_nonzero_target² (typically ~1e-10), well below the
+smallest possible AA deficit² (~1e-4). The weight term never overrides AA.
 
 The objective is a ratio of linear functions — not pure QP — but SLSQP
 handles it without issue (smooth on the feasible simplex for typical
@@ -74,18 +82,29 @@ def optimize(
         {"type": "eq", "fun": lambda x: np.sum(x) - 1.0, "jac": lambda x: np.ones(n)}
     ]
 
+    # ε: weight term coefficient. Must satisfy:
+    #   ε · max_weight_penalty < min_nonzero_deficit²
+    # max_weight_penalty ≈ 1/min(p) where p is protein fraction (0–1 scale).
+    # min_nonzero_deficit² ≈ (smallest target value)² ~ 1e-4 for typical AAs.
+    # Using ε = 1e-6 · min_nonzero_target gives ~1e-10, safely below 1e-4.
+    nonzero_targets = target_norm[target_norm > 0]
+    eps = 1e-6 * float(nonzero_targets.min()) if len(nonzero_targets) else 1e-9
+
     def objective(x: np.ndarray) -> float:
         blend_protein = float(x @ p)
         if blend_protein < 1e-10:
             return 1e12
         blend_aa = x @ food_aa          # (k,)
         norm = blend_aa / blend_protein
-        # One-sided: only penalize deficits. Excess AAs are metabolised
-        # harmlessly — penalising overshoot causes the solver to prefer
-        # blends that are uniformly mediocre over blends that nail most
-        # AAs but exceed the target on a few.
+        # Primary: one-sided deficit loss. Only penalize deficits — excess
+        # AAs are metabolised harmlessly.
         deficit = np.maximum(0.0, target_norm - norm)
-        return float(deficit @ deficit)
+        aa_loss = float(deficit @ deficit)
+        # Secondary: prefer protein-dense blends (minimize total food weight).
+        # 1/blend_protein_fraction is proportional to grams needed per g target
+        # protein. ε is calibrated so this never overrides the AA objective.
+        weight_penalty = eps / blend_protein
+        return aa_loss + weight_penalty
 
     best = None
     rng = np.random.default_rng(42)
